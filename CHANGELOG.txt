@@ -1,3 +1,149 @@
+﻿**Version 3.8.5 [??/03/2021]**
+- Changed Show-InstallationRestartPrompt:
+  - Fixed a bug in the function, that caused incorrect handling of parameters when running the function asynchronously
+  - Changed the function so it doesn't prepare the window when running asynchronously. This also fixes a bug where the timers kept running in the background and were never stopped when running asynchronously.
+  - The titlebar now shows the toolkit icon. The close button is disabled.
+  - Added -TopMost parameter
+- Changed Show-InstallationPrompt:
+  - Fixed the function failing to display a window with -NoWait parameter specified
+  - Changed the function so it doesn't prepare the window when -NoWait is specified. This also fixes a bug where the timers kept running in the background and were never stopped when -NoWait was specified.
+  - The titlebar close button is now disabled.
+  - Added -TopMost parameter
+- Changed Show-InstallationWelcome
+  - The titlebar close button is now disabled.
+  - If CloseApps timer is enabled, but none of the processes are running, the countdown message will now be the same as the one when only the Countdown is enabled without CloseApps.
+- Fixed help text for some functions that contained old/incorrect information
+- Fixed $LocalPowerUsersGroup throwing errors on machines where it does not exist (e.g. Domain Controllers)
+- Changed function Set-ActiveSetup:
+  - Fixed the function not executing the process for current user correctly
+  - The function now also checks Version and IsInstalled properties when attempting to run the process for current user
+  - Added more logging messages so it is clear from the logs why it was or was not executed for the current user
+  - IsInstalled property is no longer added to the HKCU registry entry
+  - DisableActiveSetup now also disables ExecuteForCurrentUser
+  - Extended function help text
+- Reworked Resolve-Error because it was not showing complete error information in some cases (e.g. Set-ActiveSetup)
+  - The Property parameter has been removed
+  - The function now displays the name of the property as well as its content, even when the property is empty
+  - The function now displays more properties
+  - Each property is separated by an empty line
+- Changed Execute-Process so it no longer displays the entire error information in the error popup window
+  - It will only show a short description just like other functions and the details will be available in the log
+- Fixed a couple of log message typos across the toolkit
+- Fixed a bug that caused Update-Desktop/Refresh-Desktop to crash Powershell on 32bit systems
+- Changed $GetDisplayScaleFactor so it now actually calculates the dpi scale and dpi pixels
+  - If the calculation fails, then it reads the values from registry entries
+  - If reading from registry entries fails or they contain invalid values, $dpiScale and $dpiPixels are set to 0
+- Fixed New-Folder not creating the entire path sometimes
+- Changed Remove-Folder:
+  - Parameter -ContinueOnError set to $false now stops the script on all errors
+  - Remorked how the function behaves when -DisableRecursion is specified:
+    - The function now removes everything it can except for non empty folders
+    - It stops the script if -ContinueOnError was set to true and non empty folders were detected
+- Fixed $LocalSystemNTAccount not being populated
+- Fixed New-Shortcut, Set-Shortcut and Get-Shortcut not handling UNC paths
+- Changed $installPhase at the end of the Main script
+  - This does not change anything if you run Deploy-Application.ps1, but if you dot source Main.ps1, this will make it so you're not stuck in Initialization
+
+**Version 3.8.4 [26/01/2021]**
+- Fixed Boolean parameters not being passed to Execute-Process
+- Changed Show-InstallationWelcome:
+  - Buttons are now wider
+  - Listbox is also wider so it is aligned with buttons
+  - Countdown is now bigger and in bold
+  - Appname is now in bold to be more visible
+  - Function now internally closes processes by name not by ID
+  - Fixed the hidden abort button not working on toolkit timeout
+  - Performance improvements
+- Changed Show-InstallationPrompt:
+  - Fixed the hidden abort button not working on toolkit timeout
+  - Buttons are now identical in size and position to the ones in Show-InstallationWelcome
+  - Increased the gap between the banner and the text when the message is too short
+  - The function now doesn't call Close-InstallationProgress when running in async mode
+- Changed Show-InstallationRestartPrompt:
+  - Reworked the window to look consistent with Show-InstallationWelcome
+- Changed Show-InstallationProgress:
+  - Reworked the window to look consistent with Show-InstallationWelcome
+  - Function now logs when it is being bypassed due to Deploy Mode
+- Changed Set-ActiveSetup:
+  - Fixed an issue where the function was adding executed active setup registry key when -ExecuteForCurrentUser $false was specified
+  - Function now checks the Active Setup registry key to evaluate whether to execute the StubPath based on the IsInstalled property
+- Fixed typo in Stop-ServiceAndDependencies saying "start" instead of "stop"
+- Fixed the toolkit checking task scheduler services twice
+- Fixed the toolkit not creating $app variables if they are not created in Deploy-Application.ps1
+- Reworked Close-InstallationProgress so it waits a couple of seconds in case the window is not opened yet
+  - This fixes an issue where the Show-InstallationProgress dialog would not get closed on slower machines where Close-InstallationProgress was called right after Show-InstallationProgress
+  - Function now gets bypassed in Silent Deploy Mode
+- Changed Execute-ProcessAsUser:
+  - The function now escapes invalid xml characters prior to using them in a xml file
+- Fixed signatures for a couple of functions inside AppDeployToolkitMain.cs based on official documentation - No breaking changes
+- Performance improvements across the toolkit
+- Fixed a bug in Set-ItemPermission where SID translation did not work correctly
+- Changed Show-BalloonTip:
+  - Function Show-BalloonTip now logs when it is being bypassed
+  - Added parameter -NoWait for asynchronous execution
+  - The icon tooltip now contains Title - Text
+- Fixed an issue where $envLogonServer would start with backslashes
+- Fixed an issue where some global variable did not get cleared on exit
+  - This caused an issue if you ran multiple toolkits in the same powershell session. It would use the same log file for all toolkits.
+  - This only occured if you used the .ps1 files directly. Deploy-Application.exe opens a new session each time.
+- Added function Set-Shortcut that allows you to change existing shortcuts
+- Added function Get-Shortcut to retrieve information from a shortcut
+- Changed New-Shortcut:
+  - BREAKING CHANGE: IconIndex parameter is now an Integer. It was previously incorrectly specified as a String.
+  - Reworked the way this function sets shortcut to run as admin
+  - Added additional checks for the input Path in order to provide better log messages and better handling of relative paths
+  - Improved function help text
+- Changed the way Execute-MSI handles paths for Transforms and Patches:
+  - The only accepted separator is now a semi-colon. Commas can be a part of the paths now.
+  - Double quotes are removed from the paths before the entire string is wrapped in double quotes.
+- Encoding of the files has been changed back to UTF8 with BOM, back from UTF8 without BOM:
+  - We chose to go with UTF8 without BOM because it is the encoding for Powershell v6+ and because it is one of the most popular encodings in the world.
+    However this caused issues on Windows Powershell for clients that use a different language from English. Due to Microsoft's chaotic coding decisions, Powershell uses the BOM as a verification that the code is written with non-English characters.
+    In their own words:"It's not possible to force PowerShell to use a specific input encoding. PowerShell 5.1 and below, running on Windows with the locale set to en-US, defaults to Windows-1252 encoding when there's no BOM. 
+    Other locale settings may use a different encoding. To ensure interoperability, it's best to save scripts in a Unicode format with a BOM."
+  - Just like changing to UTF8 without BOM, this will not affect the size of the files or their functionality. BOM or Byte Order Mark is just one special character, placed at the start of the files.
+    If you do not use the toolkit on machines with a different language, then this will have no effect on you or your clients. It will however help everyone else display the text in their language correctly.
+
+**Version 3.8.3 [01/10/2020]**
+- Added function Set-ItemPermission that allows you to easily change permissions on files or folders.
+- Added setting READ permissions to BUITLTIN\Users for toolkit's temporary folder so they can get the popup message.
+- Added -AddParameters for Execute-MSP, that lets you add additional parameters.
+- Added -ExecuteForCurrentUser for Set-ActiveSetup, which allows you to disable executing the StubExePath for the current user.
+- Added -UseShellExecute for Execute-Process:
+  - WindowStyle Hidden doesnt usually work without this parameter on. CreateNoWindow will usually not work without this off.
+  - This parameter changes the way the application is started. It is similar to entering a path into the Run dialog or into the Windows Explorer. If it is a file not an application, then the Shell will open it in a program assigned for this extension. The Shell does not stand for command shell but for operating system shell. It also changes how Working Directory is used.
+  - If this parameter is set to $true there is no output/error stream. Only an exit code. Default value is $false which was also the case before, however you couldnt change it through parameters previously.
+  - Expanded description for WindowStyle, CreateNoWindow and WorkingDirectory parameters.
+- Added return value for Execute-Process with -PassThru and -NoWait specified: Returns an object with Id, Handle and ProcessName.
+- Added config paths to the config file for installations where RequireAdmin is False.
+- Added revised documentation which is now included as a PDF.
+- Changed Variables to no longer rely on the system variable PATH for system applications.
+- Changed default -Source value for Write-Log to a more useful value: it will be set to Parent's function name and if not inside a function then the name of the script. If not inside a function or a script, then the value will be set to 'Unknown'.
+- Changed UnBlock-AppExecution and Block-AppExecution so they don't run without admin rights. Instead of throwing an error, they only write and entry to the log.
+- Changed Execute-MSI so when the action is Patch, two variables REINSTALL and REINSTALLMODE are appended to parameters as specified here: https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/msiexec#update-options
+- Changed timestamp of compressed toolkit logs to 24h format to avoid possible double filenames.
+- Changed Get-ScheduledTask to Get-SchedulerTask to resolve the conflict on Windows 10 and added an alias on Powershell versions where this function does not exist.
+- Changed logging inside Convert-RegistryPath to be disabled by default, to decrease log clutter.
+- Changed registry paths to no longer use registry PSDrives and contain full paths.
+- Changed Show-InstallationPrompt so the window scales with the amount of text entered and removed unused space. If there is no icon specified, the text will scale the entire width too.
+- Changed Show-InstallationRestartPrompt so it restarts the computer in Silent and VerySilent deploy modes.
+  - Added NoSilentRestart parameter for the function to retain previous behaviour, which defaults to True.
+  - Renames 'Restart Later' to 'Minimize' to make it more clear to the user.
+- Fixed visual bugs in Show-InstallationWelcome.
+  - The application name is now always displayed.
+  - Fixed uncentered text.
+  - Height of the window is now not limited and scales with the text.
+  - Removes unused variables.
+- Fixed uses of Execute-Process throughout the toolkit with the -PassThru parameter since -PassThru no longer ignores exit codes.
+- Fixed issue with $envOSVersionRevision not being populated on Windows 8 because the "UBR" registry value is only being checked if "$envOSVersionMajor = 10".
+- Fixed an issue where the correct ProgramFiles and CommonProgramFiles paths were not populated if the Toolkit was launched from a 32-bit process on a 64-bit OS.
+- Fixed Powershell 2.0 issues with GetHostEntry and GetFolderPath.
+- Fixed the issue with config file being read incorrectly and showing incorrect charaters in the UI.
+- Fixed Get-UserProfiles so it ignores "defaultuser0" account.
+- Fixed a rare issue in Execute-ProcessAsUser causing an error, because of a negative index for SubString.
+  - Improved logging in the function.
+  - CMD will now be started silently without a popup just like powershell.
+
 **Version 3.8.2 [08/05/2020]**
 
 Security Notice
@@ -20,13 +166,18 @@ Breaking Changes
 	- To ignore specific exit codes, use the new IgnoreExitCodes parameter, using * to ignore all.
 	- To stop the script if the process fails, use the ExitOnProcessFailure parameter.
   - Execute-Process would fail if an exception occurred, even when ContinueOnError was specified. It now ignores exceptions as expected.
-  - ContinueOnError now ignores exceptions as expected. To ignore specific exit codes, use the new IgnoreExitCodes parameter.
+  - ContinueOnError now ignores exceptions as expected. To ignore specific exit codes, use the IgnoreExitCodes parameter.
 
 Other
 
-- Added new parameters to the Execute-Process function:
+- Added new parameters to the Execute-MSI function:
   - NoWait. Allows immediately returning to the script once the process has been started, without waiting for it to complete (Default: False).
   - IgnoreExitCodes. Allows ignoring specific or all exit codes returned by the process (Default: None).
+  - PriorityClass. Allows changing the process priority immediately after process starts (Default: Normal).
+  - ExitOnProcessFailure. Allows setting the script to immediately stop if the process fails and returns the exit code to the caller (e.g. SCCM) (Default: True).
+  - RepairFromSource. Allows rewriting local msi cache and repair installation from source
+- Added new parameters to the Execute-Process function:
+  - IgnoreExitCodes. Now supports ignoring all exit codes returned by the process (Default: None).
   - PriorityClass. Allows changing the process priority immediately after process starts (Default: Normal).
   - ExitOnProcessFailure. Allows setting the script to immediately stop if the process fails and returns the exit code to the caller (e.g. SCCM) (Default: True).
 - Added async reading of standard error stream to Execute-Process
@@ -38,6 +189,8 @@ Other
 - Fixed a number of typos in the documentation.
 - Reverted part of the function Get-InstalledApplication that was causing slowdowns
 - Removed unused variable $processStarted.
+- Added parameter -WorkingDirectory for Execute-ProcessAsUser
+- Fixes for Slovak and Czech translations
 
 **Version 3.8.1 [03/28/2020]**
 - Added support for Repair as an action type (e.g. Install, Uninstall, Repair)
@@ -57,6 +210,7 @@ Other
 - Fixed issue in Set-PinnedApplication where pin action on StartMenu is case sensitive on Windows 10
 - Fixed Set-ActiveSetup purging incorrectly testing registry values
 - Fixed issue with Deploy-Application.exe where it would prompt to download .NET Framework 3.5 on Windows 8 and above
+- Added default -Source parameter value for Write-Log to fix CMTrace not displaying severity
 
 **Version 3.8.0 [09/23/2019]**
 - Added ability to change the dialog banner height, with a configurable maximum

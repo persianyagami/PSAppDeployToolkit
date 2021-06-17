@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
 	This script performs the installation or uninstallation of an application(s).
 	# LICENSE #
@@ -83,8 +83,8 @@ Try {
 
 	## Variables: Script
 	[string]$deployAppScriptFriendlyName = 'Deploy Application'
-	[version]$deployAppScriptVersion = [version]'3.8.2'
-	[string]$deployAppScriptDate = '08/05/2020'
+	[version]$deployAppScriptVersion = [version]'3.8.4'
+	[string]$deployAppScriptDate = '26/01/2021'
 	[hashtable]$deployAppScriptParameters = $psBoundParameters
 
 	## Variables: Environment
@@ -176,7 +176,7 @@ Try {
 			Execute-MSI @ExecuteDefaultMSISplat
 		}
 
-		# <Perform Uninstallation tasks here>
+		## <Perform Uninstallation tasks here>
 
 
 		##*===============================================
@@ -195,6 +195,9 @@ Try {
 		##*===============================================
 		[string]$installPhase = 'Pre-Repair'
 
+		## Show Welcome Message, close Internet Explorer with a 60 second countdown before automatically closing
+		Show-InstallationWelcome -CloseApps 'iexplore' -CloseAppsCountdown 60
+
 		## Show Progress Message (with the default message)
 		Show-InstallationProgress
 
@@ -208,9 +211,9 @@ Try {
 		## Handle Zero-Config MSI Repairs
 		If ($useDefaultMsi) {
 			[hashtable]$ExecuteDefaultMSISplat =  @{ Action = 'Repair'; Path = $defaultMsiFile; }; If ($defaultMstFile) { $ExecuteDefaultMSISplat.Add('Transform', $defaultMstFile) }
-		Execute-MSI @ExecuteDefaultMSISplat
+			Execute-MSI @ExecuteDefaultMSISplat
 		}
-		# <Perform Repair tasks here>
+		## <Perform Repair tasks here>
 
 		##*===============================================
 		##* POST-REPAIR
